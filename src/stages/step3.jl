@@ -12,7 +12,7 @@ function step3(avg_amp::Matrix{Float32}, tile::TileInfo, data::DataInfo, ref_row
             write_unw_igram!(raw_buffer, out_path, avg_amp, phase)
         end
     end
-    Main.@infiltrate
+
     # Cleanup by removing the temporary folder
     chunk_dir = dirname(tile.path)
     if isdir(chunk_dir)
