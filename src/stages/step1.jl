@@ -3,6 +3,8 @@ function step1(
     ints::Vector{IgramInfo},
     chunks::Vector{ChunkInfo}
 )
+    # Greet
+    println("Forming $(length(chunks)) temporary chunks...")
 
     # Reusable buffers
     unw_buffer = Matrix{Float32}(undef, data.len, data.wid)         # Phase buffer 
@@ -33,6 +35,7 @@ function step1(
     finally
         foreach(close, ios)
     end
+    println("Formed the temporary chunks.")
     return amp_cumsum ./ data.nint
 end
 

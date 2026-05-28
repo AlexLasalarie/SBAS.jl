@@ -28,7 +28,35 @@ export sbas
 
 # Body
 """
-    sbas()
+    sbas(
+        wid::Int,
+        len::Int,
+        ref_row::Int,
+        ref_col::Int,
+        intlist::String;
+        fraction_ram::Float64=0.1,
+        wavelength::Float64=5.55
+    )
+
+Generate an InSAR deformation time series from a stack of unwrapped interferograms
+using the SBAS algorithm.
+
+# Positional Arguments
+- `wid`: `Int` width of the interferograms (in pixels)
+- `len`: `Int` length of the interferograms (in pixels)
+- `ref_row`: `Int` row position of reference pixel (in pixels)
+- `ref_col`: `Int` column position of referece pixel (in pixels)
+- `intlist`: `String` path to the file containing the list of unwrapped interferograms
+
+# Optional Arguments 
+- `fraction_ram`: `Float64` fraction of random access memory allocated to the run 
+    (default is 0.1 or 10% of full available RAM)
+- `wavelength`: `Float64` wavelength of sensor, in cm (default is C-Band: 5.5 cm)
+
+# Returns
+Deformation time series. If the network of interferograms has n scenes, n-1 maps of
+the deformation (in cm) with respect to the first acquistion will be generated. 
+
 """
 function sbas(
     wid::Int,
@@ -60,6 +88,8 @@ function sbas(
 
     # Form the maps
     step3(avg_amp, tile, data, ref_row, ref_col)
+
+    println("Done!")
 end
 
 end

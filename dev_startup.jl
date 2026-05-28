@@ -6,14 +6,14 @@ if !isfile("Manifest.toml")
     Pkg.instantiate()
 end
 
-# ----- Load non-base pkgs (must be in dev. global path)
+# ----- Load pkgs for development (must be in global path)
 
 # Load Revise
 try
     using Revise
     println("Revise loaded")
 catch e
-    @warn "Revise not found. Add to your global environment."
+    @warn "Revise not found. Consider adding to your global environment."
 end
 
 # Load BenchmarkTools
@@ -21,7 +21,7 @@ try
     using BenchmarkTools
     println("BenchmarkTools loaded")
 catch e
-    @warn "BenchmarkTools not found. Add to your global environment."
+    @warn "BenchmarkTools not found. Consider adding to your global environment."
 end
 
 # Load JLD2 (for making test templates)
@@ -29,7 +29,7 @@ try
     using JLD2
     println("JLD2 loaded")
 catch e
-    @warn "JLD2 not found. Add to your global environment."
+    @warn "JLD2 not found. Consider adding to your global environment."
 end
 
 # Load Infiltrator
@@ -37,8 +37,16 @@ try
     using Infiltrator
     println("Infiltrator loaded")
 catch e
-    @warn "Infiltrator not found. Add to your global environment."
+    @warn "Infiltrator not found. Consider adding to your global environment."
 end
 
-# ----- Load the main "Engine"
+# Load GLMakie
+try
+    using GLMakie
+    println("GLMakie loaded")
+catch e
+    @warn "GLMakie not found. Consider adding to your global environment."
+end
+
+# ----- Load the engine
 using SBAS

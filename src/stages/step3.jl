@@ -1,5 +1,8 @@
 function step3(avg_amp::Matrix{Float32}, tile::TileInfo, data::DataInfo, ref_row::Int, ref_col::Int)
 
+    # Greet 
+    println("Forming deformation maps")
+
     # Buffers 
     raw_buffer = Matrix{Float32}(undef, 2 * data.wid, data.len)
     phase = Matrix{Float32}(undef, data.len, data.wid)
@@ -13,7 +16,7 @@ function step3(avg_amp::Matrix{Float32}, tile::TileInfo, data::DataInfo, ref_row
         end
     end
 
-    # Cleanup by removing the temporary folder
+    # Clean up by removing the temporary folder
     chunk_dir = dirname(tile.path)
     if isdir(chunk_dir)
         rm(chunk_dir, recursive=true)

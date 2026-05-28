@@ -26,10 +26,10 @@ struct SystemInfo
 end
 
 struct ChunkInfo
-    path::String
-    p1::Int
-    p2::Int
-    numel::Int
+    path::String    # path to chunk on disk
+    p1::Int         # index of starting pixel
+    p2::Int         # index of end pixel
+    numel::Int      # number of pixels
 end
 
 struct TileInfo

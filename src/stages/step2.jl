@@ -18,7 +18,8 @@ function step2(
     # Open time series file 
     wio = open(tile.path, "a")
     try
-        for chunk_info in chunks
+        for (i, chunk_info) in enumerate(chunks)
+            println("Processing chunk $i of $(length(chunks))")
 
             # Read chunk into buffer
             chunk = view(chunk_buffer, 1:chunk_info.numel, :)
@@ -52,10 +53,15 @@ function step2(
                 end
             end
 
-            # Append chunk to time series file  
+            # Write out deformation
             vhist = view(dhist_buffer, 1:chunk_info.numel, :)
-            vhist .*= coef                                  # Convert to deformation in cm
-            write(wio, vhist)
+            vhist .*= coef  # Convert to deformation in cm
+            for t in 1:(data.nacq-1)
+                element_offset = (t - 1) * data.npix + (chunk_info.p1 - 1)
+                byte_offset = element_offset * sizeof(Float32)
+                seek(wio, byte_offset)
+                write(wio, view(vhist, :, t))
+            end
         end
     finally
         close(wio)
