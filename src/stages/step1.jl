@@ -1,7 +1,9 @@
 function step1(
     data::DataInfo,
     ints::Vector{IgramInfo},
-    chunks::Vector{ChunkInfo}
+    chunks::Vector{ChunkInfo},
+    ref_row::Int,
+    ref_col::Int
 )
     # Greet
     println("Forming $(length(chunks)) temporary chunks...")
@@ -21,6 +23,7 @@ function step1(
 
             # Read a single igram
             read_unw_igram!(raw_buffer, amp_buffer, unw_buffer, ints[i].name)
+            calibrate!(unw_buffer, ref_row, ref_col)
 
             # Write to chunks
             for (k, chunk) in enumerate(chunks)

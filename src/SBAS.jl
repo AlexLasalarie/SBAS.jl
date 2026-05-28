@@ -81,7 +81,7 @@ function sbas(
     chunks, tile = batch_logic(data, sys)
 
     # Read the files sequentially and populate chunks
-    avg_amp = step1(data, ints, chunks)
+    avg_amp = step1(data, ints, chunks, ref_row, ref_col)
 
     # Solve for the time series
     step2(data, chunks, tile, sys, Binv, wavelength, tkp1mtk)
