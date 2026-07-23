@@ -8,7 +8,7 @@ unwrapped interferograms.
 This code expects unwrapped interferograms in the standard **ISCE/ENVI 2-Band
 Flat Binary format**. 
 
-The data must be a raw binary stream of 32-bit floating-point numbers(`Float32`) 
+The data must be a raw binary stream of 32-bit floating-point numbers(`Float32`)
 structured with **Band Interleaved** organization containing exactly two bands:
 * **Band 1:** Amplitude (or Correlation)
 * **Band 2:** Unwrapped Phase (in radians)
@@ -28,12 +28,13 @@ julia install_sbas.jl
 ```
 
 ### Quick launch
-To start a development session with all available CPU threads and auto-load the environment:
+To start a development session with all available CPU threads and auto-load the 
+environment:
 ```bash
 julia -t auto -i dev_startup.jl
 ```
-This will load development tools such as Revise, BenchmarkTools, and JLD2, if installed in your 
-global environment.
+This will load development tools such as Revise, BenchmarkTools, and JLD2, if 
+installed in your global environment.
 
 ### Manual launch
 Start a Julia session with the desired number of threads, `n`:
@@ -58,19 +59,27 @@ julia> using SBAS
 ### Default run
 Navigate to the directory containing the stack of unwrapped interferograms:
 ```bash
-julia> cd("path/to/data")
+julia> cd("<path-to>/igrams/")
 ```
-
 To form the time series, run:
 ```bash
 julia> sbas(wid, len, ref_row, ref_col, intlist)
 ```
-Where `wid` is the width and `len` is the length of the unwrapped
-interferograms, in pixels, `ref_row` and `ref_col` are the row and column
-location of the reference pixel, and `intlist` is the path to the file containing
-the list of unwrapped interferograms. This will create `n-1` (`n` is the number
-of SAR scenes) maps of the LOS deformation with respect to the first acquisition
-in cm).
+- **wid**: `Int` - width of the unwrapped interferograms (in pixels)
+- **len**: `Int` - length of the unwrapped interferograms (in pixels) 
+- **ref_row**: `Int` - row location of the reference pixel (in pixels)
+- **ref_col**: `Int` - column location of the reference pixel (in pixels)
+- **intlist**: `String` - path to the file containing the list of unwrapped 
+   interferograms
+
+This will create `n-1` (`n` is the number of SAR scenes) maps of the LOS 
+deformation with respect to the first acquisition (in cm).
+
+> InSAR measures LOS deformation relative to a reference location. The choice 
+> of reference pixel will affect the quality of the time series. A good
+> reference point should be in a stable (i.e. minimum deformation) area with 
+> high phase quality (i.e. low decorrelation noise).
+
 
 ### Custom parameters
 Individual parameters can be tweaked.
@@ -91,3 +100,5 @@ Get quick information from the Help mode:
 julia> ?
 help?> sbas
 ```
+
+

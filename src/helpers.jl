@@ -60,14 +60,18 @@ function metadata(
     # Create object containing the igram information
     ints = Vector{IgramInfo}(undef, nint)
     for i in 1:nint
+        date1 = Date.(d1[i], "yyyymmdd")
+        date2 = Date.(d2[i], "yyyymmdd")
+        dt = Int((date2 - date1).value)
         ints[i] = IgramInfo(
             file_paths[i],
             wid,
             len,
-            Date.(d1[i], "yyyymmdd"),
-            Date.(d2[i], "yyyymmdd"),
+            date1,
+            date2,
             idx1[i],
-            idx2[i]
+            idx2[i],
+            dt
         )
     end
     return ints, data

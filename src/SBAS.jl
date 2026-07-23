@@ -4,6 +4,7 @@ module SBAS
 using LinearAlgebra
 using Base.Threads
 using Dates
+using Statistics        # for common scene stacking
 
 # Internal dependencies
 
@@ -16,7 +17,10 @@ include("fileio/write_unw_igram.jl")
 
 # Helpers
 include("helpers.jl")
-include("calibrate.jl")
+include("utils/mask.jl")
+include("utils/unwrapping_error.jl")
+include("utils/common_scene_stack.jl")
+include("utils/calibrate.jl")
 
 # Stages
 include("stages/step1.jl")
@@ -24,9 +28,12 @@ include("stages/step2.jl")
 include("stages/step3.jl")
 
 # Exports
+export mask_unw_igrams
+export unwrapping_error
+export common_scene_stack
 export sbas
 
-# Body
+# Functions
 """
     sbas(
         wid::Int,

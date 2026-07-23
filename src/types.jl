@@ -6,6 +6,7 @@ struct IgramInfo
     date2::Date
     idx1::Int
     idx2::Int
+    dt::Int
 end
 
 struct DataInfo
