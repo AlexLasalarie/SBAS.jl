@@ -63,6 +63,7 @@ function unwrapping_error(
             println(io, "$path $(error)")
         end
     end
+    return path_out
 end
 
 function unw_err(psi::Matrix{Float32})

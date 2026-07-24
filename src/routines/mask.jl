@@ -2,24 +2,32 @@
     mask_unw_igrams(
         wid::Int,
         len::Int,
+        ref_col::Int,
+        ref_row::Int,
         mask_path::String,
         intlist::String
     )
 
-Apply a mask to a stack of unwrapped interferograms.
 
-# Positional arguments
+Apply a mask and calibrates a stack of unwrapped interferograms.
+
+# Positional Arguments
 - `wid`: `Int` width of unwrapped interferograms (in pixels)
 - `len`: `Int` length of unwrapped interferograms (in pixels)
+- `ref_col`: `Int` column location of the reference pixel
+- `ref_row`: `Int` row location of the reference pixel
 - `mask_path`: `String` path to mask
 - `intlist`: `String` path to file containing the list of interferograms
 
 # Returns
-Masked interferograms in the `masked` directory
+Masked interferograms, calibrated to `[ref_row, ref_col]` in the `masked` 
+directory.
 """
 function mask_unw_igrams(
     wid::Int,
     len::Int,
+    ref_col::Int,
+    ref_row::Int,
     mask_path::String,
     intlist::String
 )
@@ -56,16 +64,22 @@ function mask_unw_igrams(
     end
     mkdir(dirout)
 
-    # Mask interferograms
-    for file_path in file_paths
-        read_unw_igram!(raw, amp, psi, file_path)
-        @inbounds @simd for k in eachindex(amp)
-            if !valid[k]
-                amp[k] = 0.0f0
-                psi[k] = 0.0f0
+    # Mask interferograms and output list
+    list_out = joinpath(dirout, "unwlist")
+    open(list_out, "w") do io
+        for file_path in file_paths
+            read_unw_igram!(raw, amp, psi, file_path)
+            calibrate!(psi, ref_row, ref_col)
+            @inbounds @simd for k in eachindex(amp)
+                if !valid[k]
+                    amp[k] = 0.0f0
+                    psi[k] = 0.0f0
+                end
             end
+            pathout = joinpath(dirout, basename(file_path))
+            println(io, pathout)
+            write_unw_igram!(raw, pathout, amp, psi)
         end
-        pathout = joinpath(dirout, basename(file_path))
-        write_unw_igram!(raw, pathout, amp, psi)
     end
+    return list_out
 end

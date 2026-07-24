@@ -90,11 +90,12 @@ function common_scene_stack(
     end
 
     # Write to file
-    println("Writing to summary file...")
     path_out = joinpath(data.dir, name_out)
+    println("Writing to $path_out")
     open(path_out, "w") do io
         for (k, val) in enumerate(css_list)
             println(io, "$(paths[k]) $(val)")
         end
     end
+    return path_out
 end
