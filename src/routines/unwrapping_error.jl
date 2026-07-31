@@ -69,19 +69,18 @@ end
 function unw_err(psi::Matrix{Float32})
     len, wid = size(psi)
     unw_error = Float32(0.0)
-    pi2 = Float32(pi / 2.0)
+    pi_f32 = Float32(pi)
     for col in 1:wid-1
         for row in 1:len-1
             a = psi[row, col]
             b = psi[row+1, col]
+            c = psi[row+1, col+1]
             d = psi[row, col+1]
-            dpsi1 = abs(rem2pi(b - a, RoundNearest))
-            dpsi2 = abs(rem2pi(d - a, RoundNearest))
-            if dpsi1 > pi2
-                unw_error += dpsi1 * 2
-            end
-            if dpsi2 > pi2
-                unw_error += dpsi2 * 2
+            for (p1, p2) in ((a, b), (b, c), (c, d), (d, a))
+                dif = abs(p2 - p1)
+                if dif > pi_f32
+                    unw_error += dif
+                end
             end
         end
     end

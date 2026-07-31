@@ -20,12 +20,14 @@ include("utils/parse_lines.jl")
 include("utils/extract_dates.jl")
 include("utils/calibrate.jl")
 include("utils/helpers.jl")
+include("utils/network_connection.jl")
 
 # Routines
 include("routines/mask.jl")
 include("routines/unwrapping_error.jl")
 include("routines/common_scene_stack.jl")
 include("routines/sbas_list.jl")
+include("routines/stack.jl")
 
 # SBAS stages
 include("sbas_stages/step1.jl")
@@ -38,6 +40,7 @@ export unwrapping_error
 export common_scene_stack
 export sbas_list
 export sbas
+export stack_igrams
 export unw2def
 
 # Functions
@@ -170,6 +173,14 @@ function unw2def(
         ref_col,
         sbas_pairs,
         fraction_ram=Float64(fraction_ram),
+        wavelength=Float64(wavelength)
+    )
+    stack_igrams(
+        wid,
+        len,
+        ref_col,
+        ref_row,
+        sbas_pairs,
         wavelength=Float64(wavelength)
     )
 end

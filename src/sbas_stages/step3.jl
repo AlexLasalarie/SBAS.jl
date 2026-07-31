@@ -1,4 +1,10 @@
-function step3(avg_amp::Matrix{Float32}, tile::TileInfo, data::DataInfo, ref_row::Int, ref_col::Int)
+function step3(
+    avg_amp::Matrix{Float32},
+    tile::TileInfo,
+    data::DataInfo,
+    ref_row::Int,
+    ref_col::Int
+)
 
     # Greet 
     println("Forming deformation maps")
