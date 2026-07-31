@@ -35,7 +35,8 @@ function step2(
                 row1 = pix_per_thread * (k - 1) + 1
                 row2 = min(pix_per_thread * k, chunk_info.numel)
 
-                # Only proceed if needed (in case there are less pixels than threads)
+                # Only proceed if needed 
+                # <<< in case there are less pixels than threads >>>
                 if row1 <= row2
 
                     # Inversion (solve for velocity then integrate)
@@ -66,5 +67,4 @@ function step2(
     finally
         close(wio)
     end
-
 end

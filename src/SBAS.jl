@@ -28,6 +28,7 @@ include("routines/unwrapping_error.jl")
 include("routines/common_scene_stack.jl")
 include("routines/sbas_list.jl")
 include("routines/stack.jl")
+include("routines/sbas_rate.jl")
 
 # SBAS stages
 include("sbas_stages/step1.jl")
@@ -42,6 +43,7 @@ export sbas_list
 export sbas
 export stack_igrams
 export unw2def
+export sbas_rate
 
 # Functions
 """
