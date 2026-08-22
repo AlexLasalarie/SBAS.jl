@@ -29,6 +29,7 @@ function unwrapping_error(
     raw = Matrix{Float32}(undef, 2 * wid, len)
     amp = Matrix{Float32}(undef, len, wid)
     psi = Matrix{Float32}(undef, len, wid)
+    valid = BitMatrix(undef, len, wid)
 
     # Read list of files
     paths = Vector{String}()
@@ -52,7 +53,8 @@ function unwrapping_error(
     errors = Vector{Float32}(undef, nint)
     for (k, path) in enumerate(paths)
         read_unw_igram!(raw, amp, psi, path)
-        errors[k] = unw_err(psi)
+        valid .= amp .> 0
+        errors[k] = unw_err(psi, valid)
     end
 
     # Output the error to file
@@ -66,20 +68,42 @@ function unwrapping_error(
     return path_out
 end
 
-function unw_err(psi::Matrix{Float32})
+function unw_err(
+    psi::Matrix{Float32},
+    valid::BitMatrix
+)
     len, wid = size(psi)
     unw_error = Float32(0.0)
     pi_f32 = Float32(pi)
     for col in 1:wid-1
         for row in 1:len-1
+            # Values
             a = psi[row, col]
             b = psi[row+1, col]
             c = psi[row+1, col+1]
             d = psi[row, col+1]
-            for (p1, p2) in ((a, b), (b, c), (c, d), (d, a))
-                dif = abs(p2 - p1)
-                if dif > pi_f32
-                    unw_error += dif
+
+            # Check validity
+            va = valid[row, col]
+            vb = valid[row+1, col]
+            vc = valid[row+1, col+1]
+            vd = valid[row, col+1]
+
+            # Form (value, valid) pairs
+            pairs = (
+                ((a, va), (b, vb)),
+                ((b, vb), (c, vc)),
+                ((c, vc), (d, vd)),
+                ((d, vd), (a, va))
+            )
+
+            # Update running sum
+            for ((p1, v1), (p2, v2)) in pairs
+                if v1 && v2
+                    dif = abs(p2 - p1)
+                    if dif > pi_f32
+                        unw_error += dif
+                    end
                 end
             end
         end
