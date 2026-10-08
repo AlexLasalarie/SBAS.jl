@@ -49,7 +49,6 @@ function stack_igrams(
         date1, date2 = extract_dates(path)
         dt = Int((date2 - date1).value)
         read_unw_igram!(raw, amp, psi, path)
-        calibrate!(psi, ref_row, ref_col)
         if dt < 0
             psi .*= Float32(-1.0)
             dt = -dt
@@ -60,6 +59,7 @@ function stack_igrams(
     end
 
     # Convert to deformation
+    calibrate!(psi_sum, ref_row, ref_col)
     coef = Float32(wavelength) / (4 * pi)
     amp_sum ./= nint
     psi_sum .*= coef                        # in cm
