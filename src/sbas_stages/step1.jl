@@ -23,6 +23,11 @@ function step1(
 
             # Read a single igram
             read_unw_igram!(raw_buffer, amp_buffer, unw_buffer, ints[i].name)
+
+            # Flip sign if the dates are flipped in file name (i.e. date2_date1)
+            if ints[i].flip
+                unw_buffer .*= Float32(-1.0)
+            end
             calibrate!(unw_buffer, ref_row, ref_col)
 
             # Write to chunks

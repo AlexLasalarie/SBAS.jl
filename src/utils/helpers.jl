@@ -21,47 +21,59 @@ function metadata(
     nint = length(file_paths)
 
     # Form list of acquisition times 
-    d1 = Vector{String}(undef, nint)
-    d2 = Vector{String}(undef, nint)
-    pattern = r"(\d{8})_(\d{8})"
+    d1 = Vector{Date}(undef, nint)
+    d2 = Vector{Date}(undef, nint)
     for (i, file_path) in enumerate(file_paths)
-        m = match(pattern, file_path)
-        d1[i] = String(m[1])
-        d2[i] = String(m[2])
+        dates = extract_dates(file_path)
+        if length(dates) != 2
+            error("Could not extract a pair of dates from: $(file_path)")
+        end
+        d1[i] = dates[1]
+        d2[i] = dates[2]
     end
 
-    # Unique scenes
-    unique_scenes = sort(unique([d1; d2]))
-    nacq = length(unique_scenes)
-    scenes = Date.(unique_scenes, "yyyymmdd")
+    # Unique scenes (sorted chronologically)
+    scenes = sort(unique([d1; d2]))
+    nacq = length(scenes)
 
     # Form list of indices
     idx1 = Vector{Int}(undef, nint)
     idx2 = Vector{Int}(undef, nint)
     for i in 1:nint
-        idx1[i] = findfirst(x -> x == d1[i], unique_scenes)
-        idx2[i] = findfirst(x -> x == d2[i], unique_scenes)
+        idx1[i] = findfirst(==(d1[i]), scenes)
+        idx2[i] = findfirst(==(d2[i]), scenes)
     end
 
     # Bundle dataset information
     dir_in = dirname(abspath(file_paths[1]))
     dir_out = joinpath(dir_in, "time_series")
-    ref_scene = unique_scenes[1]
+    ref_scene = Dates.format(scenes[1], "yyyymmdd")
     out_paths = Vector{String}(undef, nacq - 1)
     if isdir(dir_out)
         rm(dir_out, recursive=true)
     end
     mkdir(dir_out)
-    for (i, scene) in enumerate(unique_scenes[2:end])
-        out_paths[i] = joinpath(dir_out, "sbas_$(ref_scene)_$(scene).un")
+    for (i, scene) in enumerate(scenes[2:end])
+        scene_str = Dates.format(scene, "yyyymmdd")
+        out_paths[i] = joinpath(dir_out, "sbas_$(ref_scene)_$(scene_str).un")
     end
     data = DataInfo(wid, len, wid * len, nint, nacq, dir_in, scenes, out_paths)
 
     # Create object containing the igram information
     ints = Vector{IgramInfo}(undef, nint)
     for i in 1:nint
-        date1 = Date.(d1[i], "yyyymmdd")
-        date2 = Date.(d2[i], "yyyymmdd")
+        date1 = d1[i]
+        date2 = d2[i]
+        col1 = idx1[i]
+        col2 = idx2[i]
+
+        # Normalize to chronological order. Pairs named date2_date1 carry the
+        # opposite sign, so flag them and let the readers negate the phase.
+        flip = date2 < date1
+        if flip
+            date1, date2 = date2, date1
+            col1, col2 = col2, col1
+        end
         dt = Int((date2 - date1).value)
         ints[i] = IgramInfo(
             file_paths[i],
@@ -69,9 +81,10 @@ function metadata(
             len,
             date1,
             date2,
-            idx1[i],
-            idx2[i],
-            dt
+            col1,
+            col2,
+            dt,
+            flip
         )
     end
     return ints, data
@@ -88,6 +101,15 @@ function make_design_matrix(ints::Vector{IgramInfo}, data::DataInfo)
         for j in col1:col2-1
             B[i, j] = days_f64[j]
         end
+    end
+
+    # Flag disconnected network
+    nparam = data.nacq - 1
+    rankB = rank(B)
+    if rankB < nparam
+        @warn "Design matrix is rank deficient: the interferogram network does " *
+              "not constrain every epoch. The time series will be damped toward " *
+              "zero across the unconstrained intervals." rank = rankB parameters = nparam
     end
     Binv = pinv(B)
     Binv_f32 = Float32.(Binv)

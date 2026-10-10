@@ -1,5 +1,6 @@
 """
     sbas_list(
+        max_dt::Int,
         max_err::Real,
         max_atm::Real,
         path_err::String,
@@ -8,9 +9,14 @@
     )
 
 Create the list of interferograms to use for SBAS inversion by imposing a 
-baseline on unwrapping error and atmospheric noise.
+baseline on: 
+1. temporal baseline
+2. unwrapping error
+3. atmospheric noise
+All comparisons are non-inclusive (e.g. dt = max_dt is excluded from list)
 
 # Positional Arguments
+- `max_dt`: `Int` maximum temporal baseline (in days)
 - `max_err`: `Real` maximum unwrapping error (in rad)
 - `max_atm`: `Real` maximum atmospheric delay (in rad)
 - `path_err`: `String` path to file containing the unwrapping errors
@@ -23,6 +29,7 @@ baseline on unwrapping error and atmospheric noise.
 List of unwrapped interferograms to use for SBAS inversion and path to the list.
 """
 function sbas_list(
+    max_dt::Int,
     max_err::Real,
     max_atm::Real,
     path_err::String,
@@ -54,13 +61,15 @@ function sbas_list(
     used_scenes = Set{Date}()
     adj_list = Dict{Date,Set{Date}}()
     isvalid_int = Vector{Bool}(undef, nint)
-    nval_ints = 0
+    nval_dts = 0
+    nval_errs = 0
     nval_pairs = 0
     for (k, path_int) in enumerate(path_ints)
         dates = extract_dates(path_int)
+        dt = abs(Int((dates[2] - dates[1]).value))
         isvalid_date1 = get(isvalid_acq, dates[1], false)
         isvalid_date2 = get(isvalid_acq, dates[2], false)
-        isvalid = (unw_errs[k] < max_err) && isvalid_date1 && isvalid_date2
+        isvalid = (unw_errs[k] < max_err) && isvalid_date1 && isvalid_date2 && (dt < max_dt)
         isvalid_int[k] = isvalid
         if isvalid
             nval_pairs += 1
@@ -70,7 +79,10 @@ function sbas_list(
             push!(get!(adj_list, dates[2], Set{Date}()), dates[1])
         end
         if unw_errs[k] < max_err
-            nval_ints += 1
+            nval_errs += 1
+        end
+        if dt < max_dt
+            nval_dts += 1
         end
     end
     isconnected = network_connection(used_scenes, adj_list)
@@ -79,10 +91,13 @@ function sbas_list(
     dirout = dirname(path_err)
     path_out = joinpath(dirout, "partition_summary")
     open(path_out, "w") do io
+        println(io, "# Temporal baseline")
+        println(io, "Maximum temporal baseline: $(max_dt) days")
+        println(io, "Valid interferograms: $(nval_dts) of $(nint)\n")
         println(io, "# Unwrapping error")
         println(io, "min, Q1, Q2, Q3, max: $(qerr[1]), $(qerr[2]), $(qerr[3]), $(qerr[4]), $(qerr[5])")
         println(io, "Unwrapping error baseline: $(max_err)")
-        println(io, "Valid interferograms: $(nval_ints) of $(nint)\n")
+        println(io, "Valid interferograms: $(nval_errs) of $(nint)\n")
         println(io, "# Atmospheric delays")
         println(io, "min, Q1, Q2, Q3, max: $(qatm[1]), $(qatm[2]), $(qatm[3]), $(qatm[4]), $(qatm[5])")
         println(io, "Maximum atm. standard dev.: $(max_atm)")

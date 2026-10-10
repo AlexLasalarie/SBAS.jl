@@ -27,8 +27,7 @@ include("routines/mask.jl")
 include("routines/unwrapping_error.jl")
 include("routines/common_scene_stack.jl")
 include("routines/sbas_list.jl")
-include("routines/stack.jl")
-include("routines/sbas_rate.jl")
+include("routines/stacking.jl")
 
 # SBAS stages
 include("sbas_stages/step1.jl")
@@ -43,7 +42,6 @@ export sbas_list
 export sbas
 export stack_igrams
 export unw2def
-export sbas_rate
 
 # Functions
 """
@@ -117,10 +115,11 @@ end
         len::Int,
         ref_col::Int,
         ref_row::Int,
-        intlist::Int,
-        path_mask::String,
+        intlist::String,
+        max_dt::Int,
         max_err::Real,
         max_atm::Real;
+        path_mask::String="",
         fraction_ram::Real=0.1,
         wavelength::Real=5.55
     )
@@ -130,8 +129,8 @@ This is an orchestrator for the following routines:
     1. apply mask and calibrate unwrapped interferograms
     2. compute unwrapping error for each interferogram
     3. estimate atmospheric delays for each scene using common scene stacking
-    4. impose unwrapping error and atm. delay baselines
-    5. run SBAS on the resulting subset of data
+    4. impose temporal baseline, unwrapping error, and atm. delay thresholds
+    5. run SBAS and stacking on the resulting subset of data
 
 # Positional Arguments
 - `wid`: `Int` width of the unwrapped interferograms (in pixels)
@@ -139,18 +138,22 @@ This is an orchestrator for the following routines:
 - `ref_col`: `Int` column index of reference location
 - `ref_row`: `Int` row index of reference location
 - `intlist`: `String` path to file containing the list of interferograms
-- `path_mask`: `String` path to mask
+- `max_dt`: `Int` maximum temporal baseline (in days) 
 - `max_err`: `Real` maximum total unwrapping error (in rad)
 - `max_atm`: `Real` maximum atmospheric noise (in rad)
 
 # Optional Arguments
+- `path_mask`: `String` path to pixel mask (default is "" for no mask)
 - `fraction_ram`: `Real` fraction of RAM to allocate to process (default is 0.1)
 - `wavelength`: `Real` sensor's wavelength (in cm, default is 0.5)
 
 # Returns
-Deformation time series. If the network of interferograms has n scenes, n-1 maps
-of the deformation (in cm) with respect to the first acquistion will be 
-generated.
+* LOS deformation time series [cm]: if the network of interferograms has n scenes, 
+n-1  maps of the deformation with respect to the first acquistion will 
+be generated.
+* LOS deformation rate [cm/yr]: 
+    1. linear SBAS solution (`sbas_rate.un`)
+    2. from stacking (`stack_rate.un`)
 """
 function unw2def(
     wid::Int,
@@ -158,16 +161,25 @@ function unw2def(
     ref_col::Int,
     ref_row::Int,
     intlist::String,
-    path_mask::String,
+    max_dt::Int,
     max_err::Real,
     max_atm::Real;
+    path_mask::String="",
     fraction_ram::Real=0.1,
     wavelength::Real=5.55
 )
-    masked_list = mask_unw_igrams(wid, len, ref_col, ref_row, path_mask, intlist)
+    # Apply mask, only if passed
+    masked_list = intlist
+    if path_mask != ""
+        masked_list = mask_unw_igrams(wid, len, ref_col, ref_row, path_mask, intlist)
+    end
+
+    # Estimate unwrapping error and atmospheric delays
     unwerr_list = unwrapping_error(wid, len, masked_list)
     atmerr_list = common_scene_stack(wid, len, masked_list)
-    sbas_pairs = sbas_list(max_err, max_atm, unwerr_list, atmerr_list)
+
+    # Apply constraints and run SBAS and stacking
+    sbas_pairs = sbas_list(max_dt, max_err, max_atm, unwerr_list, atmerr_list)
     sbas(
         wid,
         len,

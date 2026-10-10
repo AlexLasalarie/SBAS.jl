@@ -7,6 +7,7 @@ struct IgramInfo
     idx1::Int
     idx2::Int
     dt::Int
+    flip::Bool
 end
 
 struct DataInfo

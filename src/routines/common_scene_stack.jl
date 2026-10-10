@@ -59,11 +59,15 @@ function common_scene_stack(
         # Forward sum
         fcnt = 0
         for int in ints
+            # Guard against flipped pairs
             if (int.idx2 != k) || (int.dt > dtmax)
                 continue
             end
             fcnt += 1
             read_unw_igram!(raw, amp, psi, int.name)
+            if int.flip
+                psi .*= Float32(-1.0)
+            end
             css .-= psi
             amp_sum .+= amp
         end
@@ -71,11 +75,15 @@ function common_scene_stack(
         # Backward sum
         bcnt = 0
         for int in ints
+            # Guard against flipped pairs
             if (int.idx1 != k) || (int.dt > dtmax)
                 continue
             end
             bcnt += 1
             read_unw_igram!(raw, amp, psi, int.name)
+            if int.flip
+                psi .*= Float32(-1.0)
+            end
             css .+= psi
             amp_sum .+= amp
         end
