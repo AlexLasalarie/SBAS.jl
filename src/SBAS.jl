@@ -40,8 +40,9 @@ export unwrapping_error
 export common_scene_stack
 export sbas_list
 export sbas
-export stack_igrams
+export stacking
 export unw2def
+export unw2def_mad
 
 # Functions
 """
@@ -145,7 +146,7 @@ This is an orchestrator for the following routines:
 # Optional Arguments
 - `path_mask`: `String` path to pixel mask (default is "" for no mask)
 - `fraction_ram`: `Real` fraction of RAM to allocate to process (default is 0.1)
-- `wavelength`: `Real` sensor's wavelength (in cm, default is 0.5)
+- `wavelength`: `Real` sensor's wavelength (in cm, default is 5.55)
 
 # Returns
 * LOS deformation time series [cm]: if the network of interferograms has n scenes, 
@@ -189,7 +190,99 @@ function unw2def(
         fraction_ram=Float64(fraction_ram),
         wavelength=Float64(wavelength)
     )
-    stack_igrams(
+    stacking(
+        wid,
+        len,
+        ref_col,
+        ref_row,
+        sbas_pairs,
+        wavelength=Float64(wavelength)
+    )
+end
+
+"""
+    unw2def_mad(
+        wid::Int,
+        len::Int,
+        ref_col::Int,
+        ref_row::Int,
+        intlist::String,
+        max_dt::Int,
+        max_err::Real;
+        path_mask::String="",
+        fraction_ram::Real=0.1,
+        wavelength::Real=5.55
+    )
+
+Converts a network of unwrapped interferograms into deformation time series. 
+This is an orchestrator for the following routines:
+1. apply mask and calibrate unwrapped interferograms
+2. compute unwrapping error for each interferogram
+3. impose temporal baseline and unwrapping error thresholds
+4. run SBAS and stacking with MAD outlier removal on subset
+
+# Positional Arguments
+- `wid`: `Int` width of the unwrapped interferograms (in pixels)
+- `len`: `Int` lenght of the unwrapped interferograms (in pixels)
+- `ref_col`: `Int` column index of reference location
+- `ref_row`: `Int` row index of reference location
+- `intlist`: `String` path to file containing the list of interferograms
+- `max_dt`: `Int` maximum temporal baseline (in days) 
+- `max_err`: `Real` maximum total unwrapping error (in rad)
+
+# Optional Arguments
+- `path_mask`: `String` path to pixel mask (default is "" for no mask)
+- `fraction_ram`: `Real` fraction of RAM to allocate to process (default is 0.1)
+- `wavelength`: `Real` sensor's wavelength (in cm, default is 5.55)
+
+# Returns
+* LOS deformation time series [cm]: if the network of interferograms has n scenes, 
+n-1  maps of the deformation with respect to the first acquistion will 
+be generated.
+* LOS deformation rate [cm/yr] using MAD outlier removal:
+1. linear SBAS solution (`sbas_rate.un`)
+2. from stacking (`stack_rate.un`)
+
+# Notes
+**MAD outlier removal -** for scene k sum all pairs n:
+- vk = sum(abs(d_kn)) / sum(abs(dt_kn))
+- MAD = median(abs(v-median(v)))
+- Outlier: vk > median(v) + 4 * MAD
+"""
+function unw2def_mad(
+    wid::Int,
+    len::Int,
+    ref_col::Int,
+    ref_row::Int,
+    intlist::String,
+    max_dt::Int,
+    max_err::Real;
+    path_mask::String="",
+    fraction_ram::Real=0.1,
+    wavelength::Real=5.55
+)
+    # Apply mask, only if passed
+    masked_list = intlist
+    if path_mask != ""
+        masked_list = mask_unw_igrams(wid, len, ref_col, ref_row, path_mask, intlist)
+    end
+
+    # Estimate unwrapping error and atmospheric delays
+    unwerr_list = unwrapping_error(wid, len, masked_list)
+    atmerr_list = common_scene_stack(wid, len, masked_list)
+
+    # Apply constraints and run SBAS and stacking
+    sbas_pairs = sbas_list(max_dt, max_err, Inf, unwerr_list, atmerr_list)
+    sbas(
+        wid,
+        len,
+        ref_row,
+        ref_col,
+        sbas_pairs,
+        fraction_ram=Float64(fraction_ram),
+        wavelength=Float64(wavelength)
+    )
+    stacking_mad(
         wid,
         len,
         ref_col,
