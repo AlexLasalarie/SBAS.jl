@@ -54,7 +54,7 @@ function unwrapping_error(
     for (k, path) in enumerate(paths)
         read_unw_igram!(raw, amp, psi, path)
         valid .= amp .> 0
-        errors[k] = unw_err(psi, valid)
+        errors[k] = unw_err_edge(psi, valid)
     end
 
     # Output the error to file
@@ -68,7 +68,50 @@ function unwrapping_error(
     return path_out
 end
 
-function unw_err(
+"""
+Edge-based unwrapping error.
+"""
+function unw_err_edge(
+    psi::Matrix{Float32},
+    isvalid::BitMatrix
+)
+    len, wid = size(psi)
+    unwerr = zero(Float32)
+    pi32 = Float32(pi)
+    for j in 1:wid
+        for i in 1:len
+            val11 = psi[i, j]
+
+            # Column difference
+            if j + 1 <= wid     # skip if at right edge
+                val12 = psi[i, j+1]
+                if isvalid[i, j] && isvalid[i, j+1]
+                    dif = abs(val12 - val11)
+                    if dif > pi32
+                        unwerr += dif
+                    end
+                end
+            end
+
+            # Row difference
+            if i + 1 <= len     # skip if at bottom
+                val21 = psi[i+1, j]
+                if isvalid[i, j] && isvalid[i+1, j]
+                    dif = abs(val21 - val11)
+                    if dif > pi32
+                        unwerr += dif
+                    end
+                end
+            end
+        end
+    end
+    return unwerr
+end
+
+"""
+Cell-based unwrapping error, double counts interior points.
+"""
+function unw_err_cell(
     psi::Matrix{Float32},
     valid::BitMatrix
 )

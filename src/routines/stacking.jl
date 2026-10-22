@@ -126,7 +126,7 @@ function stacking_mad(
     dtsum_day = zeros(Float32, len, wid)
     dt2sum_day = zeros(Float32, len, wid)
 
-    # Common scene velocities
+    # Common scene absolute velocities
     for (k, scene) in enumerate(data.scenes)
         # Reset
         fill!(psi_sum, zero(Float32))
