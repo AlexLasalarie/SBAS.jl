@@ -44,7 +44,7 @@ function sbas_list(
 
     # Statistics
     qerr = round.(Int, quantile(unw_errs, (0.0, 0.25, 0.5, 0.75, 1.0)))
-    qatm = round.(Int, quantile(atm_errs, (0.0, 0.25, 0.5, 0.75, 1.0)))
+    qatm = round.(quantile(atm_errs, (0.0, 0.25, 0.5, 0.75, 1.0)), digits=4)
 
     # Determine if scene is valid
     isvalid_acq = Dict{Date,Bool}()
