@@ -5,6 +5,7 @@ function metadata(
     intlist::String
 )
     # Read the file list
+    @assert isfile(intlist) "$intlist is not a valid file"
     file_paths = Vector{String}()
     open(intlist, "r") do io
         for line in eachline(io)
