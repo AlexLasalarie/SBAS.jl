@@ -170,6 +170,7 @@ function unw2def(
     wavelength::Real=5.55
 )
     # Apply mask, only if passed
+    @assert isfile(intlist) "$intlist is not a valid file"
     masked_list = intlist
     if path_mask != ""
         masked_list = mask_unw_igrams(wid, len, ref_col, ref_row, path_mask, intlist)
@@ -262,6 +263,7 @@ function unw2def_mad(
     wavelength::Real=5.55
 )
     # Apply mask, only if passed
+    @assert isfile(intlist) "$intlist is not a valid file"
     masked_list = intlist
     if path_mask != ""
         masked_list = mask_unw_igrams(wid, len, ref_col, ref_row, path_mask, intlist)

@@ -32,6 +32,7 @@ function unwrapping_error(
     valid = BitMatrix(undef, len, wid)
 
     # Read list of files
+    @assert isfile(intlist) "$intlist is not a valid file"
     paths = Vector{String}()
     open(intlist, "r") do io
         for line in eachline(io)
